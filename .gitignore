@@ -1,0 +1,38 @@
+# ====================================================================
+# ARCHIVOS GLOBALES DEL REPOSITORIO
+# ====================================================================
+.DS_Store
+Thumbs.db
+*.log
+
+# Configuraciones locales de IDEs (Android Studio, IntelliJ, VSCode, etc.)
+**/.idea/
+**/*.iml
+**/.vscode/
+
+# ====================================================================
+# REGLAS PARA PROYECTOS ANDROID (Aplica a scanwifi y futuros)
+# ====================================================================
+**/.gradle/
+**/local.properties
+**/build/
+**/captures/
+**/.externalNativeBuild/
+**/.cxx/
+
+# Archivos generados y empaquetados
+**/*.apk
+**/*.ap_
+**/*.aab
+**/*.dex
+**/*.class
+
+# Archivos de firmas, claves y servicios (¡Seguridad!)
+**/*.jks
+**/*.keystore
+**/google-services.json
+
+# ====================================================================
+# REGLAS PARA OTROS CÓDIGOS (Agrega aquí lo que necesites más adelante)
+# ====================================================================
+# Ejemplo: si agregas un backend en Node, pondrías node_modules/ aquí
