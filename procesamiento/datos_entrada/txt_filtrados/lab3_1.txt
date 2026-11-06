@@ -1,0 +1,13 @@
+﻿timestamp_ms,fecha_hora,lugar,fuente,bssid,ssid,rssi_dbm,frecuencia_mhz,edad_s,router_area,router_name
+1792772618358,2026-10-23 11:23:38.358,lab3_1,scan,a4:88:73:40:a4:00,wifi-CsComputacion,-61,2412,0.2,Lab 3,wifi_compu
+1792772618358,2026-10-23 11:23:38.358,lab3_1,scan,a4:88:73:40:c8:c0,wifi-CsComputacion,-83,2412,0.2,301,wifi_compu
+1792772618359,2026-10-23 11:23:38.359,lab3_1,scan,98:97:d1:93:e6:52,WLAN_E650,-72,2412,0.2,Lab 4,WLAN_E650
+1792772618360,2026-10-23 11:23:38.360,lab3_1,scan,30:b5:c2:ef:3e:f0,ACM,-64,2412,0.2,301,ACM
+1792772618361,2026-10-23 11:23:38.361,lab3_1,scan,fc:5a:1d:7e:0e:48,MOVISTAR_0E40,-46,2412,0.2,Lab 3,Movistar
+1792772620311,2026-10-23 11:23:40.311,lab3_1,scan,a4:88:73:40:a4:00,wifi-CsComputacion,-64,2412,0.3,Lab 3,wifi_compu
+1792772620312,2026-10-23 11:23:40.312,lab3_1,scan,98:97:d1:93:e6:52,WLAN_E650,-72,2412,0.3,Lab 4,WLAN_E650
+1792772620313,2026-10-23 11:23:40.313,lab3_1,scan,30:b5:c2:ef:3e:f0,ACM,-63,2412,0.3,301,ACM
+1792772620314,2026-10-23 11:23:40.314,lab3_1,scan,fc:5a:1d:7e:0e:48,MOVISTAR_0E40,-45,2412,0.3,Lab 3,Movistar
+1792772622223,2026-10-23 11:23:42.223,lab3_1,scan,a4:88:73:40:a4:00,wifi-CsComputacion,-60,2412,0.3,Lab 3,wifi_compu
+1792772622223,2026-10-23 11:23:42.223,lab3_1,scan,fc:5a:1d:7e:0e:48,MOVISTAR_0E40,-45,2412,0.3,Lab 3,Movistar
+1792772622224,2026-10-23 11:23:42.224,lab3_1,scan,30:b5:c2:ef:3e:f0,ACM,-62,2412,0.3,301,ACM
