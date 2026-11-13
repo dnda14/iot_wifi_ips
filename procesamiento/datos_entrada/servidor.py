@@ -32,6 +32,23 @@ def recibir_escaneo():
     }), 201
 
 
+@app.route("/api/v1/devices/<device_id>/latest", methods=["GET"])
+def consultar_ultima_prediccion(device_id):
+    repositorio = app.config.get("REPOSITORIO_ESCANEOS")
+    if repositorio is None:
+        return jsonify({"error": "Consulta de escaneos no disponible"}), 503
+
+    try:
+        resultado = repositorio.obtener_ultima(device_id)
+    except Exception:
+        app.logger.exception("Error al consultar la última predicción")
+        return jsonify({"error": "Consulta de escaneos no disponible"}), 503
+
+    if resultado is None:
+        return jsonify({"error": "No hay predicciones para el dispositivo"}), 404
+    return jsonify(resultado), 200
+
+
 @app.route("/api/mediciones", methods=["POST"])
 def recibir_mediciones():
     datos = request.get_json(silent=True)

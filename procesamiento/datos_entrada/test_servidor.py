@@ -106,6 +106,42 @@ class ServidorTest(unittest.TestCase):
         self.assertEqual(respuesta.status_code, 400)
         self.assertIn("error", respuesta.get_json())
 
+    def test_consulta_ultima_prediccion(self):
+        _, repositorio = self.configurar_dependencias()
+        esperado = {
+            "device_id": "device-001",
+            "last_seen_at": "2026-01-15T14:30:02Z",
+            "prediction": {
+                "status": "estimated", "room": "Lab 3", "point": "4",
+                "model_version": "knn-v1",
+            },
+        }
+        repositorio.obtener_ultima.return_value = esperado
+        respuesta = self.cliente.get("/api/v1/devices/device-001/latest")
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(respuesta.get_json(), esperado)
+        repositorio.obtener_ultima.assert_called_once_with("device-001")
+
+    def test_consulta_sin_datos(self):
+        _, repositorio = self.configurar_dependencias()
+        repositorio.obtener_ultima.return_value = None
+        respuesta = self.cliente.get("/api/v1/devices/device-001/latest")
+        self.assertEqual(respuesta.status_code, 404)
+        self.assertIn("error", respuesta.get_json())
+
+    def test_consulta_sin_repositorio(self):
+        respuesta = self.cliente.get("/api/v1/devices/device-001/latest")
+        self.assertEqual(respuesta.status_code, 503)
+        self.assertIn("error", respuesta.get_json())
+
+    def test_consulta_si_falla_repositorio(self):
+        _, repositorio = self.configurar_dependencias()
+        repositorio.obtener_ultima.side_effect = RuntimeError("detalle privado")
+        with self.assertLogs(app.logger, level="ERROR"):
+            respuesta = self.cliente.get("/api/v1/devices/device-001/latest")
+        self.assertEqual(respuesta.status_code, 503)
+        self.assertNotIn("detalle privado", respuesta.get_data(as_text=True))
+
     def test_conserva_endpoint_anterior(self):
         respuesta = self.cliente.post("/api/mediciones", json={"mediciones": []})
         self.assertEqual(respuesta.status_code, 200)

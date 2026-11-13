@@ -83,7 +83,7 @@ La comparación de contenido, la concurrencia de dos solicitudes con el mismo ID
 }
 ```
 
-Se propone que `last_seen_at` sea la hora de recepción del servidor, no la hora del teléfono. Quedan por acordar la respuesta para dispositivos sin datos y el umbral para marcar resultados como desactualizados. La lista de dispositivos y el historial se definirán con dashboard antes de implementarlos.
+`last_seen_at` representa la hora de recepción del servidor, no la hora del teléfono. La API responde `404` si el repositorio no tiene predicciones para ese dispositivo y `503` si no está configurado o falla la consulta. Estos códigos se proponen para revisión con dashboard; falta acordar el umbral para marcar resultados como desactualizados. La lista de dispositivos y el historial se definirán con dashboard antes de implementarlos. Sin repositorio real configurado, la consulta responde `503`.
 
 ## Decisiones pendientes con el equipo
 

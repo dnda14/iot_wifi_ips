@@ -27,6 +27,12 @@ class Prediccion(TypedDict):
     model_version: str
 
 
+class UltimaPrediccion(TypedDict):
+    device_id: str
+    last_seen_at: str
+    prediction: Prediccion
+
+
 class Predictor(Protocol):
     def predecir(self, lecturas: list[Lectura]) -> Prediccion:
         """Predice una ubicación o devuelve el estado unknown."""
@@ -39,6 +45,14 @@ class RepositorioEscaneos(Protocol):
 
         Debe lanzar una excepción si no puede confirmar el guardado. La
         idempotencia y las excepciones concretas quedan pendientes de acuerdo.
+        """
+        ...
+
+    def obtener_ultima(self, device_id: str) -> UltimaPrediccion | None:
+        """Devuelve el último resultado por recepción o None si no hay datos.
+
+        last_seen_at representa la hora UTC de recepción del servidor. Los
+        errores de consulta deben propagarse, no confundirse con falta de datos.
         """
         ...
 
