@@ -54,17 +54,17 @@ Cada persona puede tener una segunda responsabilidad de apoyo, pero conviene que
    - Invocación del módulo de predicción.
    - Persistencia de escaneo y resultado.
    - Consulta de dispositivos y última predicción.
-4. Implementar autenticación mediante tokens:
-   - Definir cómo se entrega y revoca el token.
-   - Validarlo en endpoints protegidos.
-   - No guardar tokens en texto plano en el repositorio.
-   - Diferenciar **token de acceso** de **identificador de sesión**: no son lo mismo.
-5. Manejar errores: formato incorrecto, token inválido, escaneo vacío, falla de base de datos o modelo no disponible.
+4. Asociar los escaneos con un usuario mediante su código:
+   - Generar el código en el servidor y rechazar códigos no registrados.
+   - Acordar cómo se registra al usuario y cómo se entrega y recupera su código.
+   - Distinguir usuario, dispositivo, sesión y escaneo.
+   - Definir el control de acceso por separado: el código de usuario no es una contraseña.
+5. Manejar errores: formato incorrecto, usuario no reconocido cuando corresponda, escaneo vacío, falla de base de datos o modelo no disponible.
 6. Manejar reintentos sin duplicar escaneos usando un identificador único por escaneo.
 7. Hacer pruebas de concurrencia junto con la persona 6.
 8. Documentar cómo ejecutar el servidor y acceder desde la red local.
 
-**Criterio de terminado:** un cliente de prueba autenticado puede enviar un escaneo válido, obtener una respuesta y consultar después el resultado; los errores y los reintentos tienen comportamiento definido.
+**Criterio de terminado:** un cliente de prueba puede enviar un escaneo asociado al usuario, obtener una respuesta y consultar después el resultado; los errores y los reintentos tienen comportamiento definido.
 
 ---
 
@@ -77,7 +77,8 @@ Cada persona puede tener una segunda responsabilidad de apoyo, pero conviene que
 1. Revisar los archivos de medición existentes, sus etiquetas y calidad.
 2. Confirmar junto con el equipo cuáles BSSID son válidos y mantener una única configuración compartida.
 3. Diseñar el esquema inicial:
-   - Dispositivos.
+   - Usuarios y sus códigos de identificación.
+   - Dispositivos y su relación con los usuarios.
    - Sesiones.
    - Escaneos.
    - Lecturas de cada escaneo: BSSID y RSSI.
@@ -216,7 +217,7 @@ Recomiendo:
    - Registro de latencia, errores y bloqueos.
 7. Preparar un entorno de demostración reproducible y una lista de verificación.
 8. Coordinar un registro de incidencias y verificar su resolución.
-9. Revisar seguridad mínima y privacidad: acceso autenticado, protección de credenciales y política básica de conservación de datos.
+9. Revisar seguridad mínima y privacidad: control de acceso independiente del código de usuario, protección de datos y política básica de conservación.
 
 **Criterio de terminado:** otro integrante puede levantar el MVP siguiendo la documentación y ejecutar una prueba completa. Los resultados de concurrencia quedan registrados.
 
@@ -230,7 +231,7 @@ Estos contratos son una **propuesta inicial**, no describen la API que ya existe
 
 ```text
 Android
-  │  escaneo JSON + token
+  │  escaneo JSON + identificación de usuario
   ▼
 API / servidor
   ├──► Módulo de predicción ──► resultado
@@ -246,7 +247,6 @@ API / servidor
 Cabecera:
 
 ```http
-Authorization: Bearer <token>
 Content-Type: application/json
 ```
 
@@ -255,6 +255,7 @@ Entrada:
 ```json
 {
   "scan_id": "scan-001",
+  "user_code": "usuario-001",
   "device_id": "device-001",
   "session_id": "session-001",
   "captured_at": "2026-01-15T14:30:00Z",
@@ -276,6 +277,7 @@ Los BSSID anteriores son **solo ejemplos de formato**, no una lista validada par
 **Reglas mínimas:**
 
 - `scan_id`: identificador único generado por Android; se reutiliza en un reintento.
+- `user_code`: código generado por el servidor para reconocer al usuario; se envía con cada escaneo.
 - `device_id`: identificador seudónimo del dispositivo, no necesariamente un identificador de hardware.
 - `session_id`: sesión de captura a la que pertenece el escaneo.
 - `captured_at`: fecha y hora UTC del teléfono; el servidor registra también su propia hora de recepción.
@@ -316,7 +318,6 @@ Si no hay evidencia suficiente:
 **Errores y reintentos por acordar explícitamente:**
 
 - `400`: datos inválidos.
-- `401` / `403`: token inválido o sin permisos.
 - `409`: mismo `scan_id` con contenido diferente.
 - `503`: servicio o modelo no disponible.
 - Mismo `scan_id` y mismo contenido: devolver el resultado previamente guardado, sin crear otro escaneo.
@@ -377,16 +378,17 @@ Ejemplo de última ubicación:
 
 El equipo debe acordar cuánto tiempo puede pasar antes de marcar una ubicación como **desactualizada**. Una ubicación antigua no debe mostrarse como si fuera actual.
 
-## 4.6 Sesiones y tokens
+## 4.6 Usuarios, dispositivos y sesiones
 
 Para evitar confusiones:
 
-- **Token:** autoriza al cliente a usar la API.
-- **Sesión:** agrupa un período de captura de un dispositivo.
+- **Código de usuario:** permite reconocer al usuario y asociarle mediciones; no es una clave de acceso al servidor.
+- **Dispositivo:** teléfono desde el que se capturan señales; puede tener un identificador distinto al del usuario.
+- **Sesión:** agrupa un período de captura.
 - **Escaneo:** conjunto de señales capturadas en un momento.
 - **Lectura:** BSSID y RSSI de una red dentro de un escaneo.
 
-Para el contrato faltaría acordar cómo se crean y cierran las sesiones; por ejemplo, mediante `POST /api/v1/sessions` y un endpoint de cierre. Para desarrollo puede usarse un mecanismo sencillo de aprovisionamiento de tokens, pero no conviene distribuir un único token fijo dentro de la aplicación para un despliegue real.
+Falta acordar cómo se registra al usuario, cómo recibe y recupera el código generado por el servidor, cómo se relaciona con los dispositivos y cómo se crean y cierran sesiones. La protección del acceso a la API es una decisión de seguridad separada: conocer un código de usuario no demuestra la identidad de una persona.
 
 ---
 
@@ -398,7 +400,7 @@ Para el contrato faltaría acordar cómo se crean y cierran las sesiones; por ej
 
 - Confirmar alcance: ambientes, dispositivos disponibles y funciones mínimas.
 - Revisar BSSID y datos disponibles.
-- Acordar contratos, errores, autenticación y estructura de base de datos.
+- Acordar contratos, errores, identificación de usuarios, seguridad y estructura de base de datos.
 - Crear ejemplos JSON y respuestas simuladas.
 - Establecer cómo ejecutar cada componente.
 
@@ -439,7 +441,7 @@ Para el contrato faltaría acordar cómo se crean y cierran las sesiones; por ej
 |---|---|
 | Escaneo válido desde Android | Se recibe, guarda y procesa |
 | Escaneo vacío o mal formado | Se rechaza con error comprensible |
-| Token inválido | La API rechaza el acceso |
+| Código de usuario no reconocido | El sistema responde según el comportamiento acordado y no atribuye la medición a otro usuario |
 | Reenvío del mismo escaneo | No se crean duplicados |
 | BSSID faltantes | El modelo responde de forma definida o devuelve desconocido |
 | Modelo no disponible | El sistema informa el error; no inventa una ubicación |
@@ -459,7 +461,7 @@ Para las pruebas de carga, antes de ejecutarlas acuerden un objetivo concreto. P
 El MVP está listo para demostración cuando:
 
 1. Android captura y envía escaneos desde los dispositivos acordados.
-2. La API autentica, valida y guarda los datos sin duplicarlos ante reintentos.
+2. La API valida y guarda los datos asociados al usuario sin duplicarlos ante reintentos; el control de acceso acordado se aplica por separado.
 3. El modelo integrado devuelve una ubicación o «desconocido».
 4. El dashboard muestra resultados reales y distingue datos antiguos.
 5. Existe una evaluación del modelo sin fuga de datos.

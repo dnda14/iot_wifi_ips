@@ -17,7 +17,7 @@ def validar_escaneo(datos):
     if not isinstance(datos, dict):
         raise EscaneoInvalido("El cuerpo debe ser un objeto JSON")
 
-    for campo in ("scan_id", "device_id", "session_id", "captured_at"):
+    for campo in ("scan_id", "user_code", "device_id", "session_id", "captured_at"):
         valor = datos.get(campo)
         if not isinstance(valor, str) or not valor.strip():
             raise EscaneoInvalido(f"{campo} debe ser una cadena no vacía")
