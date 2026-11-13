@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 
+from procesamiento_escaneos import procesar_escaneo
 from validacion_escaneos import EscaneoInvalido, validar_escaneo
 
 app = Flask(__name__)
@@ -13,8 +14,22 @@ def recibir_escaneo():
     except EscaneoInvalido as error:
         return jsonify({"error": str(error)}), 400
 
-    # No confirmar recepción hasta contar con autenticación y persistencia.
-    return jsonify({"error": "Procesamiento de escaneos no disponible"}), 503
+    predictor = app.config.get("PREDICTOR")
+    repositorio = app.config.get("REPOSITORIO_ESCANEOS")
+    if predictor is None or repositorio is None:
+        return jsonify({"error": "Procesamiento de escaneos no disponible"}), 503
+
+    try:
+        prediccion = procesar_escaneo(datos, predictor, repositorio)
+    except Exception:
+        app.logger.exception("Error al procesar o guardar el escaneo")
+        return jsonify({"error": "Procesamiento de escaneos no disponible"}), 503
+
+    return jsonify({
+        "scan_id": datos["scan_id"],
+        "status": "processed",
+        "prediction": prediccion,
+    }), 201
 
 
 @app.route("/api/mediciones", methods=["POST"])
