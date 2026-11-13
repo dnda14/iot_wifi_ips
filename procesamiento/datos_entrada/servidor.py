@@ -1,6 +1,21 @@
 from flask import Flask, request, jsonify
 
+from validacion_escaneos import EscaneoInvalido, validar_escaneo
+
 app = Flask(__name__)
+
+
+@app.route("/api/v1/scans", methods=["POST"])
+def recibir_escaneo():
+    datos = request.get_json(silent=True)
+    try:
+        validar_escaneo(datos)
+    except EscaneoInvalido as error:
+        return jsonify({"error": str(error)}), 400
+
+    # No confirmar recepción hasta contar con autenticación y persistencia.
+    return jsonify({"error": "Procesamiento de escaneos no disponible"}), 503
+
 
 @app.route("/api/mediciones", methods=["POST"])
 def recibir_mediciones():
