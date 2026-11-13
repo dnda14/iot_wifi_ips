@@ -505,21 +505,8 @@ class MainActivity : Activity() {
         fileErrLogged = false
         if (saveEnabled && !openFile()) return
 
-        // Mantiene la radio WiFi activa y con poca latencia mientras se mide
-        wifiLock = try {
-            val mode = if (Build.VERSION.SDK_INT >= 29) {
-                WifiManager.WIFI_MODE_FULL_LOW_LATENCY
-            } else {
-                WifiManager.WIFI_MODE_FULL_HIGH_PERF
-            }
-            wifi.createWifiLock(mode, "lps:rssi").apply {
-                setReferenceCounted(false)
-                acquire()
-            }
-        } catch (e: Exception) {
-            log("No se pudo activar el WifiLock (¿falta el permiso WAKE_LOCK?). Se continúa sin él.")
-            null
-        }
+        // Prueba en Redmi: sin WiFi lock para comprobar si interfiere con los escaneos.
+        wifiLock = null
 
         lastSeen.clear()
         scanWin = 0
@@ -684,14 +671,15 @@ class MainActivity : Activity() {
         pending.incrementAndGet()
         io.execute {
             try {
-                if (send(bssid, rssi)) {
+                val result = send(bssid, rssi)
+                if (result.first) {
                     sentOk.incrementAndGet()
                 } else {
                     sentFail.incrementAndGet()
                     val now = System.currentTimeMillis()
                     if (now - lastErrLogAt > 5000) {
                         lastErrLogAt = now
-                        log("No se pudo enviar al servidor (¿URL, WiFi o servidor caído?)")
+                        log("No se pudo enviar a $serverUrl/api/reading: ${result.second}")
                     }
                 }
             } finally {
@@ -700,26 +688,34 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun send(bssid: String, rssi: Int): Boolean {
+    private fun send(bssid: String, rssi: Int): Pair<Boolean, String> {
+        var conn: HttpURLConnection? = null
         return try {
-            val conn = URL("$serverUrl/api/reading").openConnection() as HttpURLConnection
-            conn.requestMethod = "POST"
-            conn.connectTimeout = 3000
-            conn.readTimeout = 3000
-            conn.doOutput = true
-            conn.setRequestProperty("Content-Type", "application/json")
+            val connection = URL("$serverUrl/api/reading").openConnection() as HttpURLConnection
+            conn = connection
+            connection.requestMethod = "POST"
+            connection.connectTimeout = 3000
+            connection.readTimeout = 3000
+            connection.doOutput = true
+            connection.setRequestProperty("Content-Type", "application/json")
             val body = JSONObject()
                 .put("device_id", deviceId)
                 .put("router_bssid", bssid)
                 .put("rssi", rssi)
                 .toString()
-            conn.outputStream.use { it.write(body.toByteArray()) }
-            val ok = conn.responseCode in 200..299
-            conn.inputStream.close()
-            conn.disconnect()
-            ok
+            connection.outputStream.use { it.write(body.toByteArray()) }
+            val code = connection.responseCode
+            if (code in 200..299) {
+                Pair(true, "")
+            } else {
+                val detail = connection.errorStream?.bufferedReader()?.use { it.readText().take(200) }
+                    ?.takeIf { it.isNotBlank() }
+                Pair(false, "HTTP $code${if (detail == null) "" else ": $detail"}")
+            }
         } catch (e: Exception) {
-            false
+            Pair(false, "${e.javaClass.simpleName}: ${e.message ?: "sin detalle"}")
+        } finally {
+            conn?.disconnect()
         }
     }
 }
