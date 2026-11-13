@@ -8,7 +8,6 @@ class ServidorTest(unittest.TestCase):
         self.cliente = app.test_client()
         self.escaneo = {
             "scan_id": "scan-001",
-            "user_code": "usuario-001",
             "device_id": "device-001",
             "session_id": "session-001",
             "captured_at": "2026-01-15T14:30:00Z",
@@ -26,11 +25,11 @@ class ServidorTest(unittest.TestCase):
         self.assertEqual(respuesta.status_code, 400)
         self.assertIn("readings", respuesta.get_json()["error"])
 
-    def test_rechaza_escaneo_sin_codigo_de_usuario(self):
-        del self.escaneo["user_code"]
+    def test_rechaza_escaneo_sin_sesion(self):
+        del self.escaneo["session_id"]
         respuesta = self.cliente.post("/api/v1/scans", json=self.escaneo)
         self.assertEqual(respuesta.status_code, 400)
-        self.assertIn("user_code", respuesta.get_json()["error"])
+        self.assertIn("session_id", respuesta.get_json()["error"])
 
     def test_rechaza_json_malformado(self):
         respuesta = self.cliente.post(

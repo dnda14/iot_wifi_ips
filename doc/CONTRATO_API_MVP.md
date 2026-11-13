@@ -6,7 +6,7 @@
 
 Android envía un escaneo completo; la API lo valida, obtiene una predicción, guarda ambos y devuelve el resultado. El dashboard consulta el último resultado. El primer flujo puede usar una predicción simulada identificada como tal; no debe presentarse como una estimación del modelo real.
 
-**Identificación de usuario:** el servidor generará un código para reconocer al usuario y asociarlo a sus mediciones; se rechazarán los códigos no registrados. No es una clave de acceso al servidor. El registro, la recuperación del código y la comprobación contra la base de datos están pendientes de implementación. El control de acceso es una decisión de seguridad independiente.
+**Identificación de visita:** Android generará un `session_id` aleatorio al iniciar una visita y lo enviará con cada escaneo. Si pierde ese valor, generará otro y se considerará una visita nueva; no se intenta recuperar una identidad anterior. No identifica a una persona ni sirve como clave de acceso. La generación en Android aún no está implementada; el control de acceso es una decisión independiente.
 
 ## Envío de un escaneo
 
@@ -19,7 +19,6 @@ Content-Type: application/json
 ```json
 {
   "scan_id": "scan-001",
-  "user_code": "usuario-001",
   "device_id": "device-001",
   "session_id": "session-001",
   "captured_at": "2026-01-15T14:30:00Z",
@@ -31,8 +30,8 @@ Content-Type: application/json
 ```
 
 - `scan_id` identifica un escaneo y debe mantenerse en los reintentos.
-- `user_code` identifica al usuario. Android lo envía en cada escaneo; su formato definitivo está por acordar. La validación actual solo comprueba que sea una cadena no vacía, no que exista en la base de datos.
-- `device_id` es un identificador seudónimo del dispositivo; `session_id` agrupa capturas. Ninguno sustituye al código de usuario.
+- `device_id` identifica el dispositivo; su generación y duración quedan por acordar.
+- `session_id` agrupa los escaneos de una visita. Android generará un UUID al iniciar la visita y lo mantendrá mientras dure, sin necesidad de guardarlo permanentemente. La validación actual solo comprueba que sea una cadena no vacía.
 - `captured_at` es la fecha UTC indicada por el teléfono. El servidor registra por separado la recepción.
 - `readings` debe contener al menos una lectura con BSSID y RSSI en dBm. El formato y los límites concretos se acordarán antes de implementar la validación.
 - Las etiquetas de ubicación real pertenecen al flujo autorizado de recolección, no a este contrato operativo inicial.
@@ -69,7 +68,7 @@ La comparación de contenido, la concurrencia de dos solicitudes con el mismo ID
 
 ## Consulta de la última predicción
 
-`GET /api/v1/devices/{device_id}/latest`. El control de acceso a esta consulta está pendiente de decisión.
+`GET /api/v1/devices/{device_id}/latest` es una propuesta; su relación con las visitas y su control de acceso están pendientes de decisión.
 
 ```json
 {
@@ -92,5 +91,5 @@ Se propone que `last_seen_at` sea la hora de recepción del servidor, no la hora
 2. **Datos y API:** unicidad de `scan_id`, comparación de reintentos, transacciones y comportamiento ante fallas concurrentes.
 3. **Predicción y API:** interfaz de entrada, versión del modelo y condiciones para `unknown`, incluida la cantidad mínima de BSSID coincidentes.
 4. **Dashboard y API:** respuesta sin datos, umbral de antigüedad, listado e historial.
-5. **Usuario:** registro y recuperación del código generado por el servidor, formato, respuesta para códigos no registrados y relación con dispositivos y sesiones.
-6. **Integración y seguridad:** control de acceso independiente del código de usuario, transporte seguro y retención de datos. Las pruebas sin TLS deben limitarse a una red controlada y no usar datos reales.
+5. **Visita:** cuándo se inicia y termina por inactividad, y cómo se relaciona con `device_id`.
+6. **Integración y seguridad:** control de acceso independiente de `session_id`, transporte seguro y retención de datos. Las pruebas sin TLS deben limitarse a una red controlada y no usar datos reales.

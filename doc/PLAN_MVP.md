@@ -54,17 +54,17 @@ Cada persona puede tener una segunda responsabilidad de apoyo, pero conviene que
    - Invocación del módulo de predicción.
    - Persistencia de escaneo y resultado.
    - Consulta de dispositivos y última predicción.
-4. Asociar los escaneos con un usuario mediante su código:
-   - Generar el código en el servidor y rechazar códigos no registrados.
-   - Acordar cómo se registra al usuario y cómo se entrega y recupera su código.
-   - Distinguir usuario, dispositivo, sesión y escaneo.
-   - Definir el control de acceso por separado: el código de usuario no es una contraseña.
-5. Manejar errores: formato incorrecto, usuario no reconocido cuando corresponda, escaneo vacío, falla de base de datos o modelo no disponible.
+4. Asociar los escaneos con una visita mediante `session_id`:
+   - Android genera un UUID al iniciar una visita y lo envía con cada escaneo.
+   - Si pierde ese identificador, genera otro y se trata como una visita nueva.
+   - Acordar cuándo termina una visita y cómo se relaciona con `device_id`.
+   - Definir el control de acceso por separado: el identificador de sesión no es una contraseña.
+5. Manejar errores: formato incorrecto, escaneo vacío, falla de base de datos o modelo no disponible.
 6. Manejar reintentos sin duplicar escaneos usando un identificador único por escaneo.
 7. Hacer pruebas de concurrencia junto con la persona 6.
 8. Documentar cómo ejecutar el servidor y acceder desde la red local.
 
-**Criterio de terminado:** un cliente de prueba puede enviar un escaneo asociado al usuario, obtener una respuesta y consultar después el resultado; los errores y los reintentos tienen comportamiento definido.
+**Criterio de terminado:** un cliente de prueba puede enviar un escaneo asociado a una visita, obtener una respuesta y consultar después el resultado; los errores y los reintentos tienen comportamiento definido.
 
 ---
 
@@ -77,8 +77,8 @@ Cada persona puede tener una segunda responsabilidad de apoyo, pero conviene que
 1. Revisar los archivos de medición existentes, sus etiquetas y calidad.
 2. Confirmar junto con el equipo cuáles BSSID son válidos y mantener una única configuración compartida.
 3. Diseñar el esquema inicial:
-   - Usuarios y sus códigos de identificación.
-   - Dispositivos y su relación con los usuarios.
+   - Visitas y sus identificadores temporales.
+   - Dispositivos.
    - Sesiones.
    - Escaneos.
    - Lecturas de cada escaneo: BSSID y RSSI.
@@ -217,7 +217,7 @@ Recomiendo:
    - Registro de latencia, errores y bloqueos.
 7. Preparar un entorno de demostración reproducible y una lista de verificación.
 8. Coordinar un registro de incidencias y verificar su resolución.
-9. Revisar seguridad mínima y privacidad: control de acceso independiente del código de usuario, protección de datos y política básica de conservación.
+9. Revisar seguridad mínima y privacidad: control de acceso independiente del identificador de sesión, protección de datos y política básica de conservación.
 
 **Criterio de terminado:** otro integrante puede levantar el MVP siguiendo la documentación y ejecutar una prueba completa. Los resultados de concurrencia quedan registrados.
 
@@ -231,7 +231,7 @@ Estos contratos son una **propuesta inicial**, no describen la API que ya existe
 
 ```text
 Android
-  │  escaneo JSON + identificación de usuario
+  │  escaneo JSON + identificador de sesión
   ▼
 API / servidor
   ├──► Módulo de predicción ──► resultado
@@ -255,7 +255,6 @@ Entrada:
 ```json
 {
   "scan_id": "scan-001",
-  "user_code": "usuario-001",
   "device_id": "device-001",
   "session_id": "session-001",
   "captured_at": "2026-01-15T14:30:00Z",
@@ -277,9 +276,8 @@ Los BSSID anteriores son **solo ejemplos de formato**, no una lista validada par
 **Reglas mínimas:**
 
 - `scan_id`: identificador único generado por Android; se reutiliza en un reintento.
-- `user_code`: código generado por el servidor para reconocer al usuario; se envía con cada escaneo.
-- `device_id`: identificador seudónimo del dispositivo, no necesariamente un identificador de hardware.
-- `session_id`: sesión de captura a la que pertenece el escaneo.
+- `device_id`: identificador del dispositivo; su generación y duración están pendientes de acuerdo.
+- `session_id`: UUID generado por Android para agrupar los escaneos de una visita. No identifica a una persona ni es una contraseña.
 - `captured_at`: fecha y hora UTC del teléfono; el servidor registra también su propia hora de recepción.
 - `readings`: lista de redes observadas, no vacía.
 - `rssi_dbm`: intensidad en dBm.
@@ -378,17 +376,16 @@ Ejemplo de última ubicación:
 
 El equipo debe acordar cuánto tiempo puede pasar antes de marcar una ubicación como **desactualizada**. Una ubicación antigua no debe mostrarse como si fuera actual.
 
-## 4.6 Usuarios, dispositivos y sesiones
+## 4.6 Visitas y escaneos
 
 Para evitar confusiones:
 
-- **Código de usuario:** permite reconocer al usuario y asociarle mediciones; no es una clave de acceso al servidor.
-- **Dispositivo:** teléfono desde el que se capturan señales; puede tener un identificador distinto al del usuario.
-- **Sesión:** agrupa un período de captura.
+- **Dispositivo:** teléfono desde el que se capturan señales, identificado por `device_id`.
+- **Sesión:** período de captura identificado por `session_id`.
 - **Escaneo:** conjunto de señales capturadas en un momento.
 - **Lectura:** BSSID y RSSI de una red dentro de un escaneo.
 
-Falta acordar cómo se registra al usuario, cómo recibe y recupera el código generado por el servidor, cómo se relaciona con los dispositivos y cómo se crean y cierran sesiones. La protección del acceso a la API es una decisión de seguridad separada: conocer un código de usuario no demuestra la identidad de una persona.
+Falta acordar cómo se genera `device_id`, cómo se relaciona con la sesión y cuándo se considera terminada una visita por inactividad. La protección del acceso a la API es una decisión de seguridad separada: conocer un `session_id` no demuestra la identidad de una persona.
 
 ---
 
@@ -400,7 +397,7 @@ Falta acordar cómo se registra al usuario, cómo recibe y recupera el código g
 
 - Confirmar alcance: ambientes, dispositivos disponibles y funciones mínimas.
 - Revisar BSSID y datos disponibles.
-- Acordar contratos, errores, identificación de usuarios, seguridad y estructura de base de datos.
+- Acordar contratos, errores, identificación de visitas, seguridad y estructura de base de datos.
 - Crear ejemplos JSON y respuestas simuladas.
 - Establecer cómo ejecutar cada componente.
 
@@ -441,7 +438,7 @@ Falta acordar cómo se registra al usuario, cómo recibe y recupera el código g
 |---|---|
 | Escaneo válido desde Android | Se recibe, guarda y procesa |
 | Escaneo vacío o mal formado | Se rechaza con error comprensible |
-| Código de usuario no reconocido | El sistema responde según el comportamiento acordado y no atribuye la medición a otro usuario |
+| Nueva sesión | Los escaneos se asocian al nuevo `session_id`, sin mezclarlos con otra visita |
 | Reenvío del mismo escaneo | No se crean duplicados |
 | BSSID faltantes | El modelo responde de forma definida o devuelve desconocido |
 | Modelo no disponible | El sistema informa el error; no inventa una ubicación |
@@ -461,7 +458,7 @@ Para las pruebas de carga, antes de ejecutarlas acuerden un objetivo concreto. P
 El MVP está listo para demostración cuando:
 
 1. Android captura y envía escaneos desde los dispositivos acordados.
-2. La API valida y guarda los datos asociados al usuario sin duplicarlos ante reintentos; el control de acceso acordado se aplica por separado.
+2. La API valida y guarda los datos asociados a la visita sin duplicarlos ante reintentos; el control de acceso acordado se aplica por separado.
 3. El modelo integrado devuelve una ubicación o «desconocido».
 4. El dashboard muestra resultados reales y distingue datos antiguos.
 5. Existe una evaluación del modelo sin fuga de datos.

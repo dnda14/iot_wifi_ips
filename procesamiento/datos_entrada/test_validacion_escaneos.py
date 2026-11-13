@@ -8,7 +8,6 @@ class ValidacionEscaneosTest(unittest.TestCase):
     def setUp(self):
         self.escaneo = {
             "scan_id": "scan-001",
-            "user_code": "usuario-001",
             "device_id": "device-001",
             "session_id": "session-001",
             "captured_at": "2026-01-15T14:30:00Z",
@@ -26,18 +25,13 @@ class ValidacionEscaneosTest(unittest.TestCase):
                 validar_escaneo(cuerpo)
 
     def test_rechaza_identificadores_ausentes_o_vacios(self):
-        for campo in ("scan_id", "user_code", "device_id", "session_id"):
+        for campo in ("scan_id", "device_id", "session_id"):
             for valor in (None, " ", 42):
                 with self.subTest(campo=campo, valor=valor):
                     self.escaneo[campo] = valor
                     with self.assertRaises(EscaneoInvalido):
                         validar_escaneo(self.escaneo)
                     self.setUp()
-
-    def test_rechaza_codigo_de_usuario_ausente(self):
-        del self.escaneo["user_code"]
-        with self.assertRaisesRegex(EscaneoInvalido, "user_code"):
-            validar_escaneo(self.escaneo)
 
     def test_valida_fecha_utc(self):
         for fecha in (None, "", "no es fecha", "2026-01-15T14:30:00", "2026-01-15T14:30:00-05:00"):
