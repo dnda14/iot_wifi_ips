@@ -4,6 +4,13 @@
 .DS_Store
 Thumbs.db
 *.log
+**/__pycache__/
+*.py[cod]
+backend/.venv/
+backend/*.egg-info/
+backend/.pytest_cache/
+backend/data/*.sqlite3
+backend/data/*.sqlite3-*
 
 # Configuraciones locales de IDEs (Android Studio, IntelliJ, VSCode, etc.)
 **/.idea/

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IPS Hospitalario · Monitoreo multipaciente</title>
+<link rel="stylesheet" href="/static/css/app.css"></head><body>
+<header><div class="topline"><div><h1>IPS Hospitalario · Monitoreo multipaciente</h1><div class="subtitle">Posicionamiento Wi-Fi por fingerprinting y k-NN · UNSA</div></div><span class="pill">Servidor local · Puerto 8000</span></div></header>
+<main>
+<div id="conn" class="muted">Conectando con el servidor...</div>
+<div class="stats"><div class="card"><div class="kpi-label">Dispositivos detectados</div><div id="totalDevices" class="value">0</div></div>
+<div class="card"><div class="kpi-label">Con ubicación reciente</div><div id="online" class="value">0</div></div>
+<div class="card"><div class="kpi-label">Escaneos recientes (máx. 50)</div><div id="readings" class="value">0</div></div>
+<div class="card"><div class="kpi-label">BSSID calibrados</div><div id="knownAP" class="value">0</div></div></div>
+<div class="grid-layout"><section class="panel"><div class="panel-head"><div><h2>Mapa de ubicaciones</h2><span class="muted">Todos los dispositivos aparecen al mismo tiempo. Marcadores grises = ubicación antigua.</span></div>
+<select id="filter" aria-label="Filtrar dispositivo"><option value="">Todos los dispositivos</option></select></div>
+<div id="rooms" class="rooms"></div><div class="corridor"><strong>Pasillo compartido</strong><div id="lanes" class="lanes"></div></div>
+<p class="footer-note">Plano esquemático, no a escala. Los puntos 10–12 se representan en el tramo de pasillo asociado a cada salón.</p>
+<div class="warning">Prototipo de demostración. No usar para seguimiento clínico o decisiones de seguridad sin verificar precisión, cobertura, autenticación y protección de datos.</div>
+</section>
+<aside class="panel"><div class="panel-head"><h2>Dispositivos</h2><span class="muted">Actualiza cada 1,5 s</span></div><div id="people" class="list"><div class="empty-state">Esperando mediciones desde Android...</div></div>
+<p class="footer-note">Si un dispositivo recibe señales pero no aparece en el mapa, comprueba sus BSSID reconocidos en la tabla de diagnóstico.</p></aside></div>
+<div class="panel tables"><div class="panel-head"><h2>Estado de captura</h2><span id="windowInfo" class="muted">Ventana de mediciones</span></div><div class="scroll"><table><thead><tr><th>Dispositivo</th><th>Sesión</th><th>APs</th><th>Predicción</th><th>Última actualización</th></tr></thead><tbody id="diag"></tbody></table></div></div>
+<div class="panel tables"><div class="panel-head"><h2>Historial de predicciones</h2><span class="muted">Guardado en ips_hospital.sqlite3</span></div><div class="scroll"><table><thead><tr><th>Fecha</th><th>Dispositivo</th><th>Ambiente</th><th>Punto</th><th>APs</th><th>Consenso k-NN</th></tr></thead><tbody id="history"></tbody></table></div></div>
+</main>
+<script src="/static/js/app.js" defer></script></body></html>
